@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+{% load plotly_dash %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Dash App</title>
+</head>
+<body>
+
+    <h1>Analysis</h1>
+    {% plotly_app name="My_Dash_App" initial_arguments=dash_context ratio=1%}
+    <div id="django-context" style="display:none;">{{ my_var }}</div>
+
+</body>
+</html>
+{% endblock %}

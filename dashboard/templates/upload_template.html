@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Template{% endblock %}
+
+{% block content %}
+    <h1>Upload Template</h1>
+    <div class="alert alert-info">
+        <strong>Matrikel_Number:</strong> {{ user.username }} <br>
+        <strong>Name:</strong> {{ user.first_name }} <br>
+    </div>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Upload</button>
+    </form><label for=""></label>
+{% endblock %}

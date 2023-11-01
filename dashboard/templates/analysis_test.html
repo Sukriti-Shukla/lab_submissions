@@ -1,0 +1,22 @@
+
+{% load plotly_dash %}
+
+<h1>Analyze Page</h1>
+
+<form method="get">
+    {{ form.as_p }}
+    <button type="submit">Search</button>
+</form>
+
+{% if experiments %}
+<ul>
+    {% for experiment in experiments %}
+    <li>
+        {{ experiment.name }} - {{ experiment.matrikel_number }} - {{ experiment.experiment_number }} - {{ experiment.semester }}
+        <!-- Add more details or links for analysis -->
+        <a href="{% url 'analyze_view' experiment.id %}">Analyze</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+

@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="container mt-5">
+        <h2>Search and Analyze Experiments</h2>
+        <form method="get">
+            {{ form.as_p }}
+            <button type="submit">Search</button>
+        </form>
+
+        <h2>Results</h2>
+        {% if experiments %}
+            <ul>
+                {% for experiment in experiments %}
+                    <li>
+                        {{ experiment.name }} ({{ experiment.matrikel_number }})
+                        {% if experiment.is_excel_file %}
+                            <a href="?analyze_id={{ experiment.id }}">Analyze</a>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        <h2>Analysis</h2>
+
+        <label for="sheet-selector">Choose a Sheet:</label>
+        <select id="sheet-selector">
+            {% for sheet_name, sheet_data in analysis_data.items %}
+                <option value="{{ sheet_name }}">{{ sheet_data.sheet_title }}</option>
+            {% endfor %}
+        </select>
+
+        {% for sheet_name, sheet_data in analysis_data.items %}
+            <div class="sheet-container" id="{{ sheet_name }}" data-numerical-columns="{{ sheet_data.numerical_columns|join:',' }}">
+                <h3>{{ sheet_data.sheet_title }}</h3>
+
+                <label for="{{ sheet_name }}-x-axis-selector">Choose X-Axis:</label>
+                <select class="x-axis-selector" id="{{ sheet_name }}-x-axis-selector">
+                    {% for col in sheet_data.numerical_columns %}
+                        <option value="{{ col }}">{{ col }}</option>
+                    {% endfor %}
+                </select>
+                
+                <label for="{{ sheet_name }}-y-axis-selector">Choose Y-Axis:</label>
+                <select class="y-axis-selector" id="{{ sheet_name }}-y-axis-selector">
+                    {% for col in sheet_data.numerical_columns %}
+                        <option value="{{ col }}">{{ col }}</option>
+                    {% endfor %}
+                </select>
+                
+                <!-- Add a div to hold the plot for this sheet -->
+                <div class="plot-container" id="{{ sheet_name }}-plot-container">
+                    <!-- Plot will be inserted here by JavaScript -->
+                </div>
+            </div>
+        {% endfor %}
+
+       
+
+
+<!-- <div id="plot-container"></div> -->
+
+    </div>
+    {{ analysis_data_json|json_script:"analysis-data" }}
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    
+    
+    <script type="text/javascript">
+        // Parsing the analysisData from the Django template
+        // const analysisData = JSON.parse("{{ analysis_data_json|safe }}");
+        const analysisData = JSON.parse(document.getElementById('analysis-data').textContent);
+        const sheetSelector = document.getElementById("sheet-selector");
+
+        // Function to hide all sheets
+        function hideAllSheets() {
+            const sheetContainers = document.querySelectorAll(".sheet-container");
+            sheetContainers.forEach(container => {
+                container.style.display = "none";
+            });
+        }
+    
+        // Function to show the selected sheet
+        function showSelectedSheet() {
+            const selectedSheet = sheetSelector.value;
+            const container = document.getElementById(selectedSheet);
+            if (container) {
+                container.style.display = "block";
+            }
+        }
+    
+        // Function to update axis options
+        // Function to update axis options
+            function updateAxisOptions() {
+                const selectedSheet = sheetSelector.value;
+                const xAxisSelector = document.getElementById(selectedSheet + "-x-axis-selector");
+                const yAxisSelector = document.getElementById(selectedSheet + "-y-axis-selector");
+            
+                // Check if analysisData[selectedSheet] exists before proceeding
+                console.log('analysisData:', analysisData);
+                console.log('selectedSheet:', selectedSheet);
+
+                if(analysisData[selectedSheet]) {
+                    const numericalColumns = analysisData[selectedSheet]['numerical_columns'];
+            
+                    xAxisSelector.innerHTML = "";
+                    yAxisSelector.innerHTML = "";
+            
+                    // Check if numericalColumns exists before proceeding
+                    
+                    if(numericalColumns) {
+                        numericalColumns.forEach(col => {
+                            const xOption = new Option(col, col);
+                            const yOption = new Option(col, col);
+                            xAxisSelector.options.add(xOption);
+                            yAxisSelector.options.add(yOption);
+                        });
+                    } else {
+                        console.error('numerical_columns is undefined');
+                    }
+                } else {
+                    console.error('Selected sheet is not in analysisData');
+                }
+            }
+
+    
+        // Function to plot data
+        function plotData() {
+            const selectedSheet = sheetSelector.value;
+            const xAxisSelector = document.getElementById(selectedSheet + "-x-axis-selector");
+            const yAxisSelector = document.getElementById(selectedSheet + "-y-axis-selector");
+            const plotContainer = document.getElementById(selectedSheet + "-plot-container");
+    
+            const xCol = xAxisSelector.value;
+            const yCol = yAxisSelector.value;
+    
+            const sheetData = analysisData[selectedSheet]['data'];
+            const xData = Object.values(sheetData[xCol]);
+            const yData = Object.values(sheetData[yCol]);
+    
+            Plotly.newPlot(plotContainer, [{
+                x: xData,
+                y: yData,
+                type: 'scatter'
+            }], {
+                xaxis: {
+                    title: xCol
+                },
+                yaxis: {
+                    title: yCol
+                }
+            });
+        }
+    
+        // Initialize
+        document.addEventListener("DOMContentLoaded", function() {
+            const sheetSelector = document.getElementById("sheet-selector");
+            hideAllSheets();
+            showSelectedSheet();
+            updateAxisOptions();
+            plotData();
+            sheetSelector.addEventListener('change', () => {
+                hideAllSheets();
+                showSelectedSheet();
+                updateAxisOptions();
+                plotData();
+            });
+    
+            document.addEventListener('change', (event) => {
+                if (event.target.classList.contains('x-axis-selector') || event.target.classList.contains('y-axis-selector')) {
+                    plotData();
+                }
+            });
+        });
+    </script>
+    
+{% endblock %}
+
+
